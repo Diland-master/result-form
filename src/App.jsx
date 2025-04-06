@@ -1,85 +1,59 @@
-import { useState, useRef, useEffect } from 'react'
+import { useEffect, useRef } from 'react'
+import { useForm } from 'react-hook-form'
+import { yupResolver } from '@hookform/resolvers/yup'
+import * as yup from 'yup'
 import styles from './app.module.css'
 import { Field } from './components'
 
+const validateSchema = yup.object().shape({
+	email: yup.string().email('Некорректный email'),
+	password: yup
+		.string()
+		.matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?!.*\s).*$/, 'Пароль должен содержать заглавную букву, строчную букву и цифру')
+		.max(32, 'Пароль должен быть не более 32 символов')
+		.min(8, 'Пароль должен быть не менее 8 символов'),
+	passwordConfirm: yup.string().oneOf([yup.ref('password'), null], 'Пароли не совпадают'),
+})
+
 export const App = () => {
-	const [email, setEmail] = useState('')
-	const [password, setPassword] = useState('')
-	const [passwordConfirm, setPasswordСonfirm] = useState('')
-	const [emailError, setEmailError] = useState(null)
-	const [passwordError, setPasswordError] = useState(null)
-	const [passwordConfirmError, setPasswordСonfirmError] = useState(null)
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+	} = useForm({
+		defaultValues: {
+			email: '',
+			password: '',
+			passwordConfirm: '',
+		},
+		resolver: yupResolver(validateSchema),
+	})
+
+	const emailError = errors.email?.message
+	const passwordError = errors.password?.message
+	const passwordConfirmError = errors.passwordConfirm?.message
 
 	const submitButtonRef = useRef(null)
 
-	const onEmailChange = ({ target }) => {
-		setEmail(target.value)
-		setEmailError(null)
-	}
-
-	const onEmailBlur = ({ target }) => {
-		if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(target.value)) {
-			setEmailError('Некорректный email')
+	const onSubmit = (formData) => {
+		if (submitButtonRef.current) {
+			submitButtonRef.current.focus()
 		}
-	}
-
-	const onPasswordChange = ({ target }) => {
-		setPassword(target.value)
-		setPasswordError(null)
-
-		if (target.value.length > 32) {
-			setPasswordError('Пароль должен быть не более 32 символов')
-		}
-	}
-
-	const onPasswordBlur = ({ target }) => {
-		if (target.value.length < 8) {
-			setPasswordError('Пароль должен быть не менее 8 символов')
-		} else if (!/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?!.*\s).*$/.test(target.value)) {
-			setPasswordError('Пароль должен содержать заглавную букву, строчную букву и цифру')
-		}
-	}
-
-	const onPasswordСonfirmChange = ({ target }) => {
-		setPasswordСonfirm(target.value)
-		setPasswordСonfirmError(null)
-	}
-
-	const onPasswordСonfirmBlur = () => {
-		if (passwordConfirm !== password) {
-			setPasswordСonfirmError('Пароли не совпадают')
-		}
-	}
-
-	const onSubmit = (event) => {
-		event.preventDefault()
-
-		console.log({ email, password, passwordConfirm })
+		console.log(formData)
 	}
 
 	return (
-		<form onSubmit={onSubmit} className={styles.form}>
-			<Field name='email' type='email' placeholder='E-mail' value={email} onChange={onEmailChange} onBlur={onEmailBlur} error={emailError} required />
+		<form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
+			<Field name='email' type='email' placeholder='E-mail' error={emailError} {...register('email')} required />
 
-			<Field
-				name='password'
-				type='password'
-				placeholder='Пароль'
-				value={password}
-				onChange={onPasswordChange}
-				onBlur={onPasswordBlur}
-				error={passwordError}
-				required
-			/>
+			<Field name='password' type='password' placeholder='Пароль' error={passwordError} {...register('password')} required />
 
 			<Field
 				name='passwordConfirm'
 				type='password'
 				placeholder='Повторите пароль'
-				value={passwordConfirm}
-				onChange={onPasswordСonfirmChange}
-				onBlur={onPasswordСonfirmBlur}
 				error={passwordConfirmError}
+				{...register('passwordConfirm')}
 				required
 			/>
 
