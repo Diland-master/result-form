@@ -19,7 +19,7 @@ export const App = () => {
 	const {
 		register,
 		handleSubmit,
-		formState: { errors },
+		formState: { errors, isValid },
 	} = useForm({
 		defaultValues: {
 			email: '',
@@ -35,10 +35,13 @@ export const App = () => {
 
 	const submitButtonRef = useRef(null)
 
-	const onSubmit = (formData) => {
-		if (submitButtonRef.current) {
+	useEffect(() => {
+		if (isValid) {
 			submitButtonRef.current.focus()
 		}
+	}, [isValid])
+
+	const onSubmit = (formData) => {
 		console.log(formData)
 	}
 
@@ -57,7 +60,7 @@ export const App = () => {
 				required
 			/>
 
-			<button ref={submitButtonRef} type='submit' className={styles.button} disabled={!!passwordError || !!emailError || !!passwordConfirmError}>
+			<button ref={submitButtonRef} type='submit' className={styles.button} disabled={Object.keys(errors).length > 0}>
 				Зарегистрироваться
 			</button>
 		</form>
